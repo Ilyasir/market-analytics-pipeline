@@ -71,6 +71,10 @@ def load_silver_data_from_s3_to_pg(**context) -> None:
 
         con.execute(load_sql("silver_to_stage_dwh.sql", silver_s3_key=silver_s3_key))
     finally:
+        try:
+            con.execute("DETACH flats_db;")  # отсоединеяем duckdb от postgres
+        except Exception as e:
+            logging.warning(f"⚠️ соединение уже разорвано: {e}")
         con.close()
     logging.info("✅ Успешно загружено в stage таблицу")
 
