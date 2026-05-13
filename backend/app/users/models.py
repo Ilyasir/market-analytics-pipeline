@@ -26,6 +26,7 @@ class User(Base):
         server_default="GUEST",
     )
     is_active: Mapped[bool] = mapped_column(default=True, server_default="true")
+    avatar_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # связь с токенами
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates="user", cascade="all, delete-orphan")

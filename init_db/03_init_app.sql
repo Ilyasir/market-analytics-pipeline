@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS app.users (
     username VARCHAR(50) UNIQUE NOT NULL,
     hashed_password TEXT NOT NULL,
     role app.userrole NOT NULL DEFAULT 'GUEST',
-    is_active BOOLEAN DEFAULT TRUE
+    is_active BOOLEAN DEFAULT TRUE,
+    avatar_url VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS app.refresh_tokens (

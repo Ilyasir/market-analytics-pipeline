@@ -1,9 +1,11 @@
 from app.database import get_db
+from app.ml.service import s3_service
 from app.users.auth import AuthService
 from app.users.dependencies import get_current_user
 from app.users.models import User
+from app.users.repository import UserRepository
 from app.users.schemas import SUserAuth, SUserResponse
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -59,6 +61,35 @@ async def logout(response: Response):
     return {"message": "Вы вышли из системы"}
 
 
-@router.get("/me")
+@router.get("/me", response_model=SUserResponse)
 async def read_users_me(current_user: User = Depends(get_current_user)):
-    return {"id": current_user.id, "username": current_user.username, "role": current_user.role}
+    return current_user
+
+
+@router.post("/me/avatar")
+async def upload_avatar(
+    file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    # чекаем формат
+    if file.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=400, detail="Разрешены только JPEG и PNG")
+
+    file_content = await file.read()
+
+    # ключ в S3
+    file_extension = file.filename.split(".")[-1]
+    s3_key = f"avatars/{current_user.id}.{file_extension}"
+    bucket_name = "user-data"
+
+    # Загружаем в S3
+    try:
+        avatar_url = s3_service.upload_file(
+            file_content=file_content, bucket=bucket_name, s3_key=s3_key, content_type=file.content_type
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка с S3: {str(e)}")  # noqa: B904
+
+    user_repo = UserRepository(db)
+    await user_repo.update({"id": current_user.id}, avatar_url=avatar_url)
+
+    return {"status": "success", "avatar_url": avatar_url}

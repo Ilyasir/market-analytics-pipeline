@@ -12,6 +12,7 @@ class SUserResponse(BaseModel):
     username: str
     role: UserRole
     is_active: bool
+    avatar_url: str | None = None
 
     class Config:
         from_attributes = True

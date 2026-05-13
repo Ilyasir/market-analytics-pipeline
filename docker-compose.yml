@@ -97,15 +97,18 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_dwh_data:/var/lib/postgresql/data
       - ./init_db:/docker-entrypoint-initdb.d/ # DDL для создания схем и таблиц в DWH, ток при первом запуске
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       retries: 5
       start_period: 5s
     restart: always
+
   postgres_airflow:
     image: postgres:13
     networks:
@@ -124,6 +127,7 @@ services:
       retries: 5
       start_period: 5s
     restart: always
+
   metabase:
     image: metabase/metabase:v0.58.4
     container_name: metabase
@@ -140,22 +144,45 @@ services:
       resources:
         limits:
           memory: 1G
+
   backend:
     build: ./backend
     image: fastapi_backend:latest
     container_name: fastapi
     env_file:
       - .env
-    volumes:
-      - ./backend:/app
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
     depends_on:
       postgres_dwh:
         condition: service_healthy
     networks:
       - data_network
+      - public_network
     restart: always
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: react_frontend:latest
+    container_name: frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - public_network
+    restart: always
+
   airflow-webserver:
     <<: *airflow-common
     container_name: airflow_webserver
@@ -235,6 +262,9 @@ networks:
   data_network:
     driver: bridge
     name: data_network
+  public_network:
+    driver: bridge
+    name: public_network
 
 volumes:
   postgres_airflow_data:

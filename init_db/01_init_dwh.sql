@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS gold.history_flats (
 	rooms_count INT not null,
 	floor INT not null,
 	total_floors INT not null,
-	СHECK (floor <= total_floors),
+	CHECK (floor <= total_floors),
 	-- геоданные
 	is_new_moscow BOOLEAN not null,
 	address TEXT not null,
