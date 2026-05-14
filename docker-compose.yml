@@ -88,7 +88,7 @@ services:
       exit 0;
       "
   postgres_dwh:
-    image: postgres:13
+    image: postgres:16
     networks:
       - data_network
     container_name: postgres_dwh
@@ -101,13 +101,13 @@ services:
       - postgres_dwh_data:/var/lib/postgresql/data
       - ./init_db:/docker-entrypoint-initdb.d/ # DDL для создания схем и таблиц в DWH, ток при первом запуске
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       retries: 5
       start_period: 5s
     restart: always
   postgres_airflow:
-    image: postgres:13
+    image: postgres:16
     networks:
       - data_network
     container_name: postgres_airflow
