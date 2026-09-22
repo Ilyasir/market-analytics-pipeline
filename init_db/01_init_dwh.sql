@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS gold.history_flats (
 	flat_hash CHAR(32) not null, -- уникальный хэш квартиры (md5 от адреса, этажа и комнатности)
 	link TEXT not null,
 	title VARCHAR(100) not null,
-	price BIGINT not null CHECK (price > 0), -- в москве цены огромные, юзаем bigint
+	price BIGINT not null CHECK (price > 0), 
 	-- характеристики квартиры
 	is_apartament BOOLEAN not null,
 	is_studio BOOLEAN not null,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS gold.history_flats (
 	rooms_count INT not null,
 	floor INT not null,
 	total_floors INT not null,
-	СHECK (floor <= total_floors),
+	CHECK (floor <= total_floors),
 	-- геоданные
 	is_new_moscow BOOLEAN not null,
 	address TEXT not null,
